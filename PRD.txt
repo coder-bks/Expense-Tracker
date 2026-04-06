@@ -1,0 +1,66 @@
+* Project Name & One-liner Expense tracker
+* Problem Statement - users dont remember where there money went 
+* Core Features - sign-in, crud expenses
+* Out of Scope- we are not buildning splitvise type app
+* Tech Stack — jwt auth for login, passlib for password hashing, postgress for database,SQLlite as orm, fastapi for differnet endpoint of RESTAPI, python for logic building, pytest for testing the various inputs,for forntend (html,css,js)
+* Success Criteria - can a user register, login, add an expense, and see only their own data
+
+expense-tracker/
+├── main.py = main app to run
+├── expenselogic.py = fastapi and SQLlite crud logic
+├── userlogin = auth and pasword
+├── user data = logic of storing data of new users
+├── expenses = logic of storing expense data 
+├──pytest
+│   ├── test files
+
+app/
+  main.py
+  core/
+    config.py
+  db/
+    session.py
+    base.py
+  models/
+    user.py
+    expense.py
+  schemas/
+    user.py
+    expense.py
+  api/
+      routes/
+       auth.py
+       expense.py
+  
+  crud/
+    expense_crud.py
+tests/
+    test_expense.py
+
+
+
+
+
+
+expense-tracker/
+├── app/
+│   ├── main.py
+│   ├── core/
+│   │   └── config.py
+│   ├── db/
+│   │   ├── session.py
+│   │   └── base.py
+│   ├── models/
+│   │   ├── user.py
+│   │   └── expense.py
+│   ├── schemas/
+│   │   ├── user.py
+│   │   └── expense.py
+│   ├── api/
+│   │   └── routes/
+│   │       ├── auth.py
+│   │       └── expense.py
+│   └── crud/
+│       └── expense_crud.py
+└── tests/
+    └── test_expenses.py
