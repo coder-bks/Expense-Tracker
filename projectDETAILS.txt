@@ -1,0 +1,145 @@
+jwt.py creates a secure, time-limited “magic ticket” that proves who the user is after login.
+
+Register = validate → check duplicates → hash → store
+Login = validate → fetch user → verify password → issue JWT.
+
+Register endpoint flow (POST /auth/register)
+
+    Step-by-step pipeline:
+
+    Receive request body
+    Validate against UserCreate schema
+    Ensure required fields exist (username, email, password)
+    Normalize input (optional but important)
+    Lowercase email
+    Trim username
+    Check for existing user
+    Query DB for same email or username
+    If exists → return error (409 Conflict)
+    Hash the password
+    Never store raw password
+    Use a secure hashing function (bcrypt/argon2)
+    Create User object
+    Map input → DB model
+    Replace password with hashed_password
+    Save to database
+    Add → commit → refresh
+    Return response
+    Return UserRead (no password)
+
+Login endpoint flow (POST /auth/login)
+
+    Step-by-step pipeline:
+
+    Receive request body
+    Validate input (email/username + password)
+    Find user in DB
+    Query by email or username
+    If not found → reject
+    Verify password
+    Compare raw password with stored hashed_password
+    If mismatch → reject
+    Generate JWT token
+    Include payload:
+    user_id (important)
+    optional: exp (expiry time)
+    Sign using SECRET_KEY + ALGORITHM
+    Return token
+
+Typically:
+
+{
+  "access_token": "...",
+  "token_type": "bearer"
+}
+
+contextlib is a Python standard library module that helps you create and work with context managers.
+
+What is a context manager?
+
+A context manager is something that:
+
+sets up a resource
+cleans it up automatically
+
+
+
+(FastAPI lifespan)
+
+    Instead of writing a class like:
+
+    class Lifespan:
+        def __enter__(self): ...
+        def __exit__(self): ...
+
+    You use:
+
+    from contextlib import asynccontextmanager
+
+    And write:
+
+    @asynccontextmanager
+    async def lifespan(app):
+        # setup
+        yield
+        # cleanup
+    How it works internally (simple)
+    Code before yield → runs at startup
+    Code after yield → runs at shutdown
+    Even if an error happens → cleanup still runs
+    Analogy
+
+    Think of it like:
+
+    Enter room → turn lights ON
+    Leave room → lights OFF automatically
+
+
+
+BaseSettings
+
+    Think of BaseSettings as a smart loader for configuration.
+
+    It automatically reads values from:
+    environment variables
+    .env files
+    It maps them to Python attributes
+
+    What Depends does (simple)
+
+Depends is how FastAPI says:
+    “Before running this function, get me this required thing.”
+
+    Your case
+    def register(user: UserCreate, db: Session = Depends(get_db)):
+
+    FastAPI sees:
+
+    “This route needs a database session”
+    So it calls get_db() automatically
+    Takes what it yields
+    Injects it into db
+    What actually happens behind the scenes
+    Request comes in
+    FastAPI runs get_db()
+    get_db() creates a session
+        A Session is your app’s temporary connection + workspace to talk to the database.
+
+        Think of it like a conversation with the database:
+
+        You open a session → start talking
+        You ask questions (queries)
+        You make changes (insert/update/delete)
+        You finish → session closes
+
+    That session is passed into your function
+    After request finishes → session is closed automatically
+
+APIRouter 
+    apirouter is a way to group related API endpoints together.
+    Instead of putting everything in one big main.py, you split your app into modules.
+
+    auth routes → auth.py
+    expense routes → expense.py
+
+    Each file has its own router.
