@@ -143,3 +143,38 @@ APIRouter
     expense routes → expense.py
 
     Each file has its own router.
+
+Test these scenarios in order:
+    Register:
+
+        Register a new user — should return 201 with id, username, email
+        Register the same user again — should return 409 Conflict
+        Register with same email but different username — should return 409 Conflict
+
+    Login:
+
+        Login with correct credentials — should return access_token and token_type: bearer
+        Login with wrong password — should return 401 Unauthorized
+        Login with email that doesn't exist — should return 401 Unauthorized
+
+
+So the full flow of token
+
+Extract token from Authorization header
+Decode it using SECRET_KEY
+Get user id from the sub field
+Fetch user from database
+Return the user to the endpoint
+
+
+An oauth2_scheme instance — OAuth2PasswordBearer(tokenUrl="/auth/login")
+A get_current_user function that takes token via Depends(oauth2_scheme) and db via Depends(get_db)
+
+Inside get_current_user:
+
+Try to decode the token using jwt.decode() with your SECRET_KEY and ALGORITHM
+Extract sub from the payload — that's your user id
+If anything fails raise 401 Unauthorized
+Fetch the user from db using that id
+If user not found raise 401
+Return the user
