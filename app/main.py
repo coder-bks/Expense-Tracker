@@ -7,6 +7,8 @@ from app.db import base
 
 
 from app.api.routes.auth import router as auth_router
+from app.api.routes.expense import router as expense_router
+
 
 
 @asynccontextmanager
@@ -21,3 +23,4 @@ app = FastAPI(lifespan=lifespan)
 
 # Routers (to be added)
 app.include_router(auth_router)
+app.include_router(expense_router)

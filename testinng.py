@@ -1,59 +1,62 @@
-from datetime import datetime, timedelta
-from jose import jwt, JWTError
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
-from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
+from app.schemas.user import UserCreate, UserRead
+from app.core.security import hash_password, verify_password
+from app.core.jwt import create_access_token
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-def create_access_token(data: dict) -> str:
-    to_encode = data.copy()
-
-    expire = datetime.utcnow() + timedelta(
-        minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+@router.post("/register", response_model=UserRead)
+def register(user: UserCreate, db: Session = Depends(get_db)):
+    statement = select(User).where(
+        (User.email == user.email) | (User.username == user.username)
     )
-    to_encode.update({"exp": expire})
+    existing_user = db.exec(statement).first()
 
-    return jwt.encode(
-        to_encode,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
-    )
-
-
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: Session = Depends(get_db)
-) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials"
-    )
-
-    try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="User already exists"
         )
-        user_id: str = payload.get("sub")
 
-        if user_id is None:
-            raise credentials_exception
+    hashed_password = hash_password(user.password)
 
-    except JWTError:
-        raise credentials_exception
+    db_user = User(
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password
+    )
 
-    statement = select(User).where(User.id == int(user_id))
-    user = db.exec(statement).first()
+    db.add(db_user)
+    db.commit()
+    db.refresh(db_user)
 
-    if user is None:
-        raise credentials_exception
+    return db_user
 
-    return user
+
+@router.post("/login")
+def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db)
+):
+    statement = select(User).where(User.email == form_data.username)
+    db_user = db.exec(statement).first()
+
+    if not db_user or not verify_password(form_data.password, db_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials"
+        )
+
+    token = create_access_token(data={"sub": str(db_user.id)})
+
+    return {
+        "access_token": token,
+        "token_type": "bearer"
+    }
