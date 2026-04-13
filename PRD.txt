@@ -65,4 +65,3 @@ expense-tracker/
 └── tests/
     └── test_expenses.py
 
-    Hey, I'm juinor python/fastapi dev totaly into building products with coding and currently working on backend projects. Would love to connect with people in the tech spaces
