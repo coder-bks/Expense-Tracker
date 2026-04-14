@@ -12,7 +12,7 @@ from app.core.jwt import create_access_token
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=UserRead)
+@router.post("/register", response_model=UserRead, status_code=201)
 def register(user: UserCreate, db: Session = Depends(get_db)):
     statement = select(User).where(
         (User.email == user.email) | (User.username == user.username)

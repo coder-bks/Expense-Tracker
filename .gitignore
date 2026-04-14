@@ -5,4 +5,4 @@ __pycache__/
 *.pyo
 projectDETAILS.txt
 testinng.py
-app/expense_tracker.egg-info
+expense_tracker.egg-info
